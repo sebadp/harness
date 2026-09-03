@@ -3,7 +3,7 @@
   A five-component system that keeps AI coding agents from degrading the codebase.
   Two hard hooks that cannot be bypassed. Three instruction disciplines that require judgment.
 
-  **Live landing:** https://$OWNER.github.io/$REPO_NAME/
+   [**Live landing:**](https://sebadp.github.io/harness)
 
   ## What this is
 
