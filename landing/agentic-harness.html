@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agentic Quality Harness</title>
+<style>
+/* ── Tokens ───────────────────────────────────────────────────────────────── */
+:root {
+  --paper: #ffffff; --ground: #f4f8f7; --ink: #0c1719; --ink-soft: #23383a;
+  --muted: #586e6f; --faint: #849898; --line: #dbe7e5; --line-strong: #c4d6d3;
+  --teal: #0c7d76; --teal-bright: #12a89c; --teal-wash: #e4f2ef;
+  --amber: #c47a1e; --amber-wash: #f7ecd9;
+  --violet: #6b5bd0; --violet-wash: #edeafc;
+  --crit: #b64b39; --crit-wash: #faeae7;
+  --green: #4f8a4a; --green-wash: #eaf3e9;
+  --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --mono: ui-monospace, "SF Mono", "JetBrains Mono", "Menlo", "Consolas", monospace;
+  --maxw: 1100px; --radius: 14px;
+  --shadow: 0 1px 2px rgba(12,23,25,.04), 0 10px 34px -18px rgba(12,23,25,.28);
+}
+@media (prefers-color-scheme: dark) { :root {
+  --paper: #0e1719; --ground: #0a1113; --ink: #e7f0ef; --ink-soft: #c3d3d1;
+  --muted: #8ca3a2; --faint: #5f7574; --line: #1c2a2b; --line-strong: #26383a;
+  --teal: #2bbdae; --teal-bright: #46d8c7; --teal-wash: #10312e;
+  --amber: #e2a552; --amber-wash: #2a2113;
+  --violet: #9a8cf0; --violet-wash: #1e1a3a;
+  --crit: #e07660; --crit-wash: #2a1410;
+  --green: #79bd72; --green-wash: #111f10;
+  --shadow: 0 1px 2px rgba(0,0,0,.4), 0 18px 40px -20px rgba(0,0,0,.7);
+}}
+:root[data-theme="light"] {
+  --paper:#fff;--ground:#f4f8f7;--ink:#0c1719;--ink-soft:#23383a;--muted:#586e6f;--faint:#849898;
+  --line:#dbe7e5;--line-strong:#c4d6d3;--teal:#0c7d76;--teal-bright:#12a89c;--teal-wash:#e4f2ef;
+  --amber:#c47a1e;--amber-wash:#f7ecd9;--violet:#6b5bd0;--violet-wash:#edeafc;
+  --crit:#b64b39;--crit-wash:#faeae7;--green:#4f8a4a;--green-wash:#eaf3e9;
+  --shadow:0 1px 2px rgba(12,23,25,.04),0 10px 34px -18px rgba(12,23,25,.28);
+}
+:root[data-theme="dark"] {
+  --paper:#0e1719;--ground:#0a1113;--ink:#e7f0ef;--ink-soft:#c3d3d1;--muted:#8ca3a2;--faint:#5f7574;
+  --line:#1c2a2b;--line-strong:#26383a;--teal:#2bbdae;--teal-bright:#46d8c7;--teal-wash:#10312e;
+  --amber:#e2a552;--amber-wash:#2a2113;--violet:#9a8cf0;--violet-wash:#1e1a3a;
+  --crit:#e07660;--crit-wash:#2a1410;--green:#79bd72;--green-wash:#111f10;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 18px 40px -20px rgba(0,0,0,.7);
+}
+*{box-sizing:border-box;}
+.ah{background:var(--ground);color:var(--ink);font-family:var(--sans);line-height:1.6;-webkit-font-smoothing:antialiased;font-size:17px;overflow-x:hidden;}
+.ah ::selection{background:var(--teal);color:var(--paper);}
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 24px;}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.22em;text-transform:uppercase;color:var(--teal);font-weight:600;}
+h1,h2,h3{text-wrap:balance;margin:0;letter-spacing:-.02em;font-weight:680;}
+h1{font-size:clamp(2.4rem,6vw,4.2rem);line-height:1.02;letter-spacing:-.035em;}
+h2{font-size:clamp(1.7rem,3.6vw,2.5rem);line-height:1.08;}
+h3{font-size:1.12rem;letter-spacing:-.01em;font-weight:660;}
+p{margin:0;}
+.lead{font-size:clamp(1.05rem,1.7vw,1.28rem);color:var(--ink-soft);line-height:1.5;max-width:44ch;}
+code,.mono{font-family:var(--mono);}
+
+/* topbar */
+.topbar{position:sticky;top:0;z-index:50;backdrop-filter:saturate(1.4) blur(10px);background:color-mix(in srgb,var(--ground) 82%,transparent);border-bottom:1px solid var(--line);}
+.topbar .wrap{display:flex;align-items:center;justify-content:space-between;height:60px;gap:16px;}
+.brand{display:flex;align-items:center;gap:10px;font-weight:640;letter-spacing:-.02em;}
+.brand .glyph{width:26px;height:26px;border-radius:7px;display:grid;place-items:center;background:var(--ink);color:var(--paper);font-family:var(--mono);font-size:15px;font-weight:700;}
+.navlinks{display:flex;align-items:center;gap:22px;font-size:14px;}
+.navlinks a{color:var(--muted);text-decoration:none;}
+.navlinks a:hover{color:var(--ink);}
+.theme-btn{font-family:var(--mono);font-size:12px;letter-spacing:.06em;border:1px solid var(--line-strong);background:transparent;color:var(--muted);border-radius:8px;padding:6px 10px;cursor:pointer;}
+.theme-btn:hover{color:var(--ink);border-color:var(--teal);}
+@media(max-width:720px){.navlinks .hide-sm{display:none;}}
+
+/* hero */
+.hero{padding:clamp(48px,8vw,100px) 0 48px;}
+.hero-grid{display:grid;grid-template-columns:1.1fr 1fr;gap:clamp(32px,5vw,72px);align-items:center;}
+@media(max-width:900px){.hero-grid{grid-template-columns:1fr;}}
+.hero h1{margin-top:18px;}
+.hero .lead{margin-top:22px;}
+.accent{color:var(--teal);}
+.cta-row{display:flex;flex-wrap:wrap;gap:12px;margin-top:30px;}
+.btn{font:inherit;font-size:15px;font-weight:560;cursor:pointer;text-decoration:none;border-radius:10px;padding:11px 20px;display:inline-flex;align-items:center;gap:8px;border:1px solid transparent;transition:transform .12s,background .15s;}
+.btn:active{transform:translateY(1px);}
+.btn-primary{background:var(--teal);color:#fff;}
+.btn-primary:hover{background:var(--teal-bright);}
+.btn-ghost{border-color:var(--line-strong);color:var(--ink);}
+.btn-ghost:hover{border-color:var(--teal);color:var(--teal);}
+
+/* terminal hero card */
+.term{background:#05100f;border:1px solid #1a2e2c;border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;}
+:root[data-theme="light"] .term{background:#0c1c1a;}
+.term-bar{display:flex;align-items:center;gap:7px;padding:10px 14px;border-bottom:1px solid #1a2e2c;}
+.term-bar i{width:11px;height:11px;border-radius:99px;display:inline-block;}
+.dot-r{background:#ff5f57;}.dot-y{background:#febc2e;}.dot-g{background:#28c840;}
+.term-bar .fn{font-family:var(--mono);font-size:11.5px;color:#4a6461;margin-left:8px;letter-spacing:.06em;}
+.term pre{margin:0;padding:16px 18px;font-family:var(--mono);font-size:13px;line-height:1.7;white-space:pre;overflow-x:auto;}
+.t-dim{color:#3a5654;}.t-muted{color:#5d8480;}.t-teal{color:#4fb8af;}.t-green{color:#6db968;}
+.t-amber{color:#c99052;}.t-red{color:#c26356;}.t-white{color:#c8dbd8;}.t-faint{color:#2e4a48;}
+.t-block{background:rgba(79,184,175,.12);border-radius:3px;padding:0 3px;}
+
+/* sections */
+section{padding:clamp(52px,8vw,96px) 0;border-top:1px solid var(--line);}
+.sec-head{max-width:62ch;margin-bottom:36px;}
+.sec-head h2{margin-top:12px;}
+.sec-head p{margin-top:14px;color:var(--muted);font-size:1.08rem;}
+
+/* layer cards (the three systems) */
+.layers{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;}
+@media(max-width:860px){.layers{grid-template-columns:1fr;}}
+.layer{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:22px 20px;box-shadow:var(--shadow);position:relative;}
+.layer .l-num{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;font-weight:700;}
+.layer .l-icon{font-size:26px;margin-top:14px;}
+.layer h3{margin-top:10px;font-size:1.14rem;}
+.layer p{margin-top:8px;font-size:14.5px;color:var(--muted);line-height:1.55;}
+.layer .l-badge{display:inline-block;margin-top:14px;font-family:var(--mono);font-size:11px;padding:3px 10px;border-radius:99px;font-weight:600;}
+.gate-color{color:var(--teal);}
+.adr-color{color:var(--violet);}
+.habit-color{color:var(--amber);}
+.badge-gate{background:var(--teal-wash);color:var(--teal);border:1px solid color-mix(in srgb,var(--teal) 30%,transparent);}
+.badge-adr{background:var(--violet-wash);color:var(--violet);border:1px solid color-mix(in srgb,var(--violet) 30%,transparent);}
+.badge-habit{background:var(--amber-wash);color:var(--amber);border:1px solid color-mix(in srgb,var(--amber) 30%,transparent);}
+
+/* enforcement comparison */
+.enf-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;}
+@media(max-width:700px){.enf-grid{grid-template-columns:1fr;}}
+.enf-card{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:22px;box-shadow:var(--shadow);}
+.enf-card h3{font-size:1rem;margin-top:10px;}
+.enf-card ul{margin:12px 0 0;padding:0 0 0 18px;font-size:14.5px;color:var(--muted);line-height:1.8;}
+.enf-card ul li{margin-bottom:2px;}
+.enf-label{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;font-weight:700;}
+.hard{color:var(--crit);}.soft{color:var(--violet);}
+.enf-tag{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:11.5px;padding:3px 10px;border-radius:99px;margin-top:4px;font-weight:600;}
+.tag-hard{background:var(--crit-wash);color:var(--crit);border:1px solid color-mix(in srgb,var(--crit) 30%,transparent);}
+.tag-soft{background:var(--violet-wash);color:var(--violet);border:1px solid color-mix(in srgb,var(--violet) 30%,transparent);}
+
+/* code blocks */
+.code{background:#05100f;color:#d6e4e2;border-radius:var(--radius);border:1px solid var(--line-strong);font-family:var(--mono);font-size:12.5px;line-height:1.65;overflow-x:auto;box-shadow:var(--shadow);}
+:root[data-theme="light"] .code{background:#0c1c1a;}
+.code .bar{display:flex;align-items:center;gap:7px;padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.07);}
+.code .bar i{width:10px;height:10px;border-radius:99px;background:#2a3f3d;display:inline-block;}
+.code .bar .fn{font-size:11.5px;color:#5a7875;letter-spacing:.08em;margin-left:6px;}
+.code pre{margin:0;padding:15px 18px;white-space:pre;overflow-x:auto;}
+.sy{color:#5fbfb4;}.at{color:#cf9d63;}.st{color:#9fd18a;}.tx{color:#b6c6c4;}.cm{color:#3d5c59;font-style:italic;}
+.hl{background:rgba(196,122,30,.18);border-radius:3px;padding:0 2px;color:#f0c98a;}
+.kw{color:#8cb4e0;}.fn-name{color:#d6a0e0;}.num{color:#b5d18a;}
+
+/* detail split layout */
+.detail{display:grid;grid-template-columns:1fr 1fr;gap:36px;align-items:start;}
+@media(max-width:900px){.detail{grid-template-columns:1fr;}}
+.detail-wide{display:grid;grid-template-columns:1.3fr 1fr;gap:36px;align-items:start;}
+@media(max-width:900px){.detail-wide{grid-template-columns:1fr;}}
+
+/* callouts */
+.callouts{display:grid;gap:14px;}
+.callout{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:15px 18px;}
+.callout h3{font-size:.98rem;margin-top:8px;}
+.callout p{margin-top:6px;font-size:14px;color:var(--muted);line-height:1.55;}
+.callout .t-label{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:600;}
+.callout.teal .t-label{color:var(--teal);}
+.callout.amber .t-label{color:var(--amber);}
+.callout.violet .t-label{color:var(--violet);}
+.callout.crit .t-label{color:var(--crit);}
+
+/* file map */
+.filemap{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);}
+.filemap-row{display:grid;grid-template-columns:1fr 1fr;gap:0;padding:12px 18px;border-bottom:1px solid var(--line);font-size:14px;align-items:start;}
+.filemap-row:last-child{border-bottom:none;}
+.filemap-row .path{font-family:var(--mono);font-size:12.5px;color:var(--teal);}
+.filemap-row .desc{color:var(--muted);font-size:13.5px;line-height:1.5;}
+.filemap-head{background:color-mix(in srgb,var(--teal) 8%,var(--paper));padding:10px 18px;border-bottom:1px solid var(--line);}
+.filemap-head span{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);font-weight:600;}
+
+/* make commands table */
+.cmd-table{width:100%;border-collapse:collapse;font-size:14px;}
+.cmd-table th,.cmd-table td{text-align:left;padding:12px 14px;border-bottom:1px solid var(--line);}
+.cmd-table thead th{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);font-weight:600;background:var(--paper);}
+.cmd-table tbody tr:hover{background:color-mix(in srgb,var(--teal) 4%,var(--paper));}
+.cmd-table .cmd{font-family:var(--mono);font-size:13px;color:var(--teal);}
+.cmd-table .desc{color:var(--muted);}
+.cmd-table .area{font-family:var(--mono);font-size:11.5px;}
+
+/* flow diagram */
+.flow-strip{display:flex;align-items:stretch;gap:0;overflow-x:auto;padding-bottom:4px;}
+.flow-box{flex:1;min-width:140px;background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:14px 14px;position:relative;}
+.flow-box+.flow-box{border-left:none;border-radius:0 10px 10px 0;}
+.flow-box:first-child{border-radius:10px 0 0 10px;}
+.flow-arrow{display:flex;align-items:center;color:var(--faint);font-family:var(--mono);font-size:18px;padding:0 2px;flex-shrink:0;}
+.flow-box .fk{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);}
+.flow-box h4{margin:6px 0 0;font-size:.9rem;font-weight:640;letter-spacing:-.01em;}
+.flow-box p{margin:4px 0 0;font-size:12.5px;color:var(--muted);line-height:1.4;}
+.flow-box.active{border-color:color-mix(in srgb,var(--teal) 50%,var(--line));background:var(--teal-wash);}
+.flow-box.block{border-color:color-mix(in srgb,var(--crit) 50%,var(--line));background:var(--crit-wash);}
+.flow-box.pass{border-color:color-mix(in srgb,var(--green) 50%,var(--line));background:var(--green-wash);}
+
+/* pill badges inline */
+.pill{display:inline-flex;align-items:center;gap:5px;font-family:var(--mono);font-size:12px;padding:3px 10px;border-radius:99px;font-weight:600;white-space:nowrap;}
+.p-teal{background:var(--teal-wash);color:var(--teal);border:1px solid color-mix(in srgb,var(--teal) 25%,transparent);}
+.p-amber{background:var(--amber-wash);color:var(--amber);border:1px solid color-mix(in srgb,var(--amber) 25%,transparent);}
+.p-violet{background:var(--violet-wash);color:var(--violet);border:1px solid color-mix(in srgb,var(--violet) 25%,transparent);}
+.p-crit{background:var(--crit-wash);color:var(--crit);border:1px solid color-mix(in srgb,var(--crit) 25%,transparent);}
+.p-green{background:var(--green-wash);color:var(--green);border:1px solid color-mix(in srgb,var(--green) 25%,transparent);}
+.p-muted{background:var(--paper);color:var(--muted);border:1px solid var(--line);}
+
+/* hook lifecycle table */
+.hook-table{width:100%;border-collapse:collapse;font-size:14px;background:var(--paper);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);}
+.hook-table th,.hook-table td{padding:12px 16px;border-bottom:1px solid var(--line);text-align:left;}
+.hook-table thead th{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);font-weight:600;}
+.hook-table td:first-child{font-family:var(--mono);font-size:13px;font-weight:600;color:var(--teal);}
+.hook-table td:nth-child(3){font-family:var(--mono);font-size:12px;}
+
+/* bootstrap promo */
+.promo{background:linear-gradient(135deg,color-mix(in srgb,var(--teal) 12%,var(--paper)),color-mix(in srgb,var(--violet) 8%,var(--paper)));border:1px solid var(--line-strong);border-radius:var(--radius);padding:clamp(28px,4vw,44px);box-shadow:var(--shadow);}
+.promo h2{font-size:clamp(1.4rem,3vw,2rem);}
+.promo .lead{max-width:52ch;}
+
+/* footer */
+footer{padding:40px 0 52px;border-top:1px solid var(--line);}
+footer .wrap{display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;}
+.footer-note{font-size:13.5px;color:var(--faint);}
+.hero-dark{background:#07100f;border-top:none !important;}
+.hero-dark .eyebrow{color:#2bbdae;}
+.hero-dark h1{color:#e7f0ef;}
+.hero-dark h1 span{color:#8ca3a2;}
+.hero-dark .lead{color:#7a9896;}
+.hero-dark .btn-ghost{border-color:#26383a;color:#c3d3d1;}
+.hero-dark .btn-ghost:hover{border-color:#2bbdae;color:#2bbdae;}
+section.gate-dark,section.habit-dark{background:#07100f;}
+section.gate-dark .sec-head p,section.habit-dark .sec-head p{color:#5f7574;}
+section.gate-dark h2,section.habit-dark h2{color:#e7f0ef;}
+section.gate-dark h3,section.habit-dark h3{color:#c3d3d1;}
+section.gate-dark .callout,section.habit-dark .callout{background:#0e1719;border-color:#26383a;}
+section.gate-dark .callout p,section.habit-dark .callout p{color:#7a9896;}
+section.gate-dark .callout h3,section.habit-dark .callout h3{color:#c3d3d1;}
+h2{font-size:clamp(2rem,4.5vw,3.2rem);line-height:1.06;}
+.sec-head h2{margin-top:10px;}
+.sec-head .eyebrow{font-size:11px;letter-spacing:.28em;}
+</style>
+</head>
+<body class="ah" id="top">
+
+<!-- ── Topbar ─────────────────────────────────────────────────────────────── -->
+<header class="topbar">
+  <div class="wrap">
+    <div class="brand">
+      <span class="glyph">⌬</span>
+      Agentic Quality Harness
+    </div>
+    <nav class="navlinks">
+      <a href="#layers">Lifecycle</a>
+      <a href="#components">Components</a>
+      <a href="#install" class="hide-sm">Install</a>
+      <a href="../agentic-harness/README.html" class="hide-sm">Docs</a>
+      <button class="theme-btn" onclick="toggleTheme()">◐ theme</button>
+    </nav>
+  </div>
+</header>
+
+<!-- ── Hero ──────────────────────────────────────────────────────────────── -->
+<div class="ah">
+<main>
+<section class="hero hero-dark" style="padding:clamp(64px,10vw,120px) 0 clamp(48px,7vw,72px);">
+  <div class="wrap" style="max-width:820px;">
+    <p class="eyebrow">Agentic Quality Harness · for Claude Code</p>
+    <h1 style="margin-top:18px;">Your standards.<br><span style="color:#8ca3a2;font-size:clamp(1.5rem,3.8vw,2.7rem);font-weight:520;letter-spacing:-.015em;">Even when the agent disagrees.</span></h1>
+    <p class="lead" style="margin-top:22px;max-width:60ch;">AI coding agents iterate fast and drift faster. Left unchecked, they find the path of least resistance — passing the linter, not fixing the design. This harness closes the feedback loop at every stage.</p>
+    <div style="margin-top:30px;font-family:var(--mono);font-size:13px;line-height:2;color:#7a9896;">
+      <div><span style="color:#4a6461;">→</span> <a href="#components" style="color:#c3d3d1;text-decoration:none;border-bottom:1px dashed #26383a;">The five components</a></div>
+      <div><span style="color:#4a6461;">→</span> <a href="#install" style="color:#c3d3d1;text-decoration:none;border-bottom:1px dashed #26383a;">Install in another repo</a></div>
+      <div><span style="color:#4a6461;">→</span> <a href="../agentic-harness/README.html" style="color:#c3d3d1;text-decoration:none;border-bottom:1px dashed #26383a;">Docs</a></div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Architecture — full lifecycle ──────────────────────────────────────── -->
+<section id="layers">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="eyebrow">The lifecycle</p>
+      <h2 style="font-size:clamp(1.7rem,3.4vw,2.4rem);">Five components, one turn.</h2>
+      <p>Click a node to inspect it. Two are hard-enforced via Claude Code hooks (exit 2 — cannot be bypassed). Three are instruction-enforced — they require judgment.</p>
+    </div>
+
+    <!-- Architecture canvas: vertical helix (side view) with station panel -->
+    <div id="arch-wrap" style="border-radius:var(--radius);overflow:hidden;background:linear-gradient(180deg,#030d0c 0%,#061615 40%,#061615 60%,#030d0c 100%);box-shadow:0 2px 4px rgba(0,0,0,.3),0 32px 80px -24px rgba(0,0,0,.8);margin-bottom:40px;position:relative;">
+      <canvas id="arch-canvas" style="width:100%;height:680px;display:block;cursor:pointer;"></canvas>
+      <div id="arch-labels" style="position:absolute;inset:0;pointer-events:none;overflow:hidden;"></div>
+      <div id="arch-side" style="position:absolute;top:0;right:0;bottom:0;width:min(470px,46%);padding:48px 44px;display:flex;flex-direction:column;justify-content:center;overflow-y:auto;pointer-events:none;opacity:0;transition:opacity .35s ease;border-left:1px solid #0f2420;background:linear-gradient(90deg,transparent 0%,rgba(6,22,21,.4) 30%,rgba(6,22,21,.6) 100%);"></div>
+      <div style="position:absolute;top:18px;left:24px;font-family:ui-monospace,'SF Mono',monospace;font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:#3d5c59;font-weight:700;pointer-events:none;">The lifecycle · every turn lifts the codebase</div>
+      <div style="position:absolute;bottom:18px;left:24px;font-family:ui-monospace,'SF Mono',monospace;font-size:10px;letter-spacing:.06em;color:#2a3f3c;pointer-events:none;">
+        <span style="color:#5d8480;">bottom → top</span> = iterations over time
+      </div>
+      <div style="position:absolute;bottom:18px;right:calc(min(470px,46%) + 24px);font-family:ui-monospace,'SF Mono',monospace;font-size:10px;letter-spacing:.06em;color:#2a3f3c;pointer-events:none;">click a station →</div>
+    </div>
+    <script>
+    (function() {
+      var canvas = document.getElementById('arch-canvas');
+      var labelsEl = document.getElementById('arch-labels');
+      var sideEl = document.getElementById('arch-side');
+      if (!canvas) return;
+      var ctx = canvas.getContext('2d');
+
+      // Stations ordered BOTTOM-UP (first in the cycle at the bottom, last at top)
+      var NODES = [
+        { name:'Context reading', timing:'Before work',        col:'#9a8cf0', hard:false, pill:'instruction',   glyph:'◐',
+          metric:'3 sources · agent-enforced',
+          source:'CLAUDE.md § Before starting',
+          desc:'Load the codebase\'s decisions and in-flight work before the agent gets any ideas. Skipping this is how you get code that fights the repo.' },
+        { name:'Planning Gate',   timing:'Before coding',      col:'#e07660', hard:true,  pill:'exit 2 · hard', glyph:'⬢',
+          metric:'PreToolUse · exit 2',
+          source:'.claude/hooks/require-plan.sh',
+          desc:'Every write to app code is intercepted. No exec plan, no write — the tool call is cancelled with exit 2 before the model sees the result.' },
+        { name:'Habit Hooks',     timing:'Every turn',         col:'#e2a552', hard:true,  pill:'exit 2 · hard', glyph:'⌬',
+          metric:'Stop hook · exit 2',
+          source:'habit-hooks · pyproject.toml',
+          desc:'Structural smells (complexity, argument bloat) get a coaching guide, not a generic warning. Re-injected until the agent stops gaming the metric.' },
+        { name:'Testing Pyramid', timing:'After implementing', col:'#79bd72', hard:false, pill:'CI gates',       glyph:'△',
+          metric:'260 tests · 3 gated · 4 deferred',
+          source:'ADR-002 · pytest · TestSprite',
+          desc:'Types → unit → e2e in CI. TestSprite on demand. Contract, property, mutation deferred with explicit unlock criteria — not "someday".' },
+        { name:'ADR Discipline',  timing:'When deciding',      col:'#9a8cf0', hard:false, pill:'instruction',   glyph:'◆',
+          metric:'permanent · versioned',
+          source:'docs/adr/ · CLAUDE.md',
+          desc:'Why lives with the code. Adopting a tool, breaking a pattern, accepting debt — write it as an ADR. Never deleted, only superseded.' },
+      ];
+
+      function hex2rgb(h){ return [parseInt(h.slice(1,3),16), parseInt(h.slice(3,5),16), parseInt(h.slice(5,7),16)]; }
+      NODES.forEach(function(n){ n.rgb = hex2rgb(n.col); });
+      var TEAL_RGB = [43,189,174], RED_RGB = [224,118,96];
+      function rgba(rgb, a){ return 'rgba('+rgb[0]+','+rgb[1]+','+rgb[2]+','+a+')'; }
+
+      var selectedNode = 1, hoveredNode = -1;
+
+      function updateSide(){
+        var n = NODES[selectedNode];
+        var badgeStyle = 'display:inline-flex;align-items:center;gap:6px;font-family:ui-monospace,monospace;font-size:12px;padding:5px 14px;border-radius:99px;white-space:nowrap;font-weight:600;';
+        var badge = n.hard
+          ? '<span style="'+badgeStyle+'background:#e0766018;color:#e07660;border:1px solid #e0766045;">⚡ '+n.pill+'</span>'
+          : '<span style="'+badgeStyle+'background:'+n.col+'18;color:'+n.col+';border:1px solid '+n.col+'45;">'+n.pill+'</span>';
+        sideEl.style.opacity = '0';
+        setTimeout(function(){
+          sideEl.innerHTML =
+            '<div style="display:flex;align-items:center;gap:18px;margin-bottom:24px;">'+
+              '<div style="width:76px;height:76px;border-radius:50%;background:radial-gradient(circle,'+n.col+'22 0%,'+n.col+'06 70%,transparent 100%);display:flex;align-items:center;justify-content:center;position:relative;flex-shrink:0;">'+
+                '<div style="position:absolute;inset:0;border-radius:50%;border:1.5px solid '+n.col+'55;box-shadow:0 0 26px '+n.col+'40,inset 0 0 18px '+n.col+'20;"></div>'+
+                '<span style="position:relative;z-index:1;font-size:36px;line-height:1;color:'+n.col+';text-shadow:0 0 14px '+n.col+'80,0 0 22px '+n.col+'40;">'+n.glyph+'</span>'+
+              '</div>'+
+              '<div>'+
+                '<p style="font-family:ui-monospace,\'SF Mono\',monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:'+n.col+';font-weight:700;margin:0 0 5px;">'+n.timing+'</p>'+
+                '<h3 style="font-size:1.5rem;font-weight:660;color:#e7f0ef;margin:0;letter-spacing:-.02em;line-height:1.1;">'+n.name+'</h3>'+
+              '</div>'+
+            '</div>'+
+            '<p style="font-family:ui-monospace,\'SF Mono\',monospace;font-size:12px;color:'+n.col+'aa;letter-spacing:.02em;margin:0 0 18px;">'+n.metric+'</p>'+
+            '<p style="font-size:15px;color:#8ca3a2;line-height:1.65;margin:0 0 20px;">'+n.desc+'</p>'+
+            badge+
+            '<p style="font-family:ui-monospace,monospace;font-size:11px;color:#3d5c59;margin:20px 0 0;letter-spacing:.04em;">'+n.source+'</p>';
+          sideEl.style.opacity = '1';
+        }, 180);
+      }
+      updateSide();
+
+      var mouseX = -1000, mouseY = -1000;
+      canvas.addEventListener('mousemove', function(e){
+        var r = canvas.getBoundingClientRect();
+        mouseX = e.clientX - r.left; mouseY = e.clientY - r.top;
+        var found = -1;
+        // Hit-detect a horizontal band per station: from the node core through the label
+        for (var i=0; i<NODES.length; i++){
+          if (NODES[i].px == null) continue;
+          var yMatch = Math.abs(mouseY - NODES[i].py) < 30;
+          var xMatch = mouseX >= NODES[i].px - 40 && mouseX <= NODES[i].labelX + 240;
+          if (yMatch && xMatch){ found = i; break; }
+        }
+        hoveredNode = found;
+        canvas.style.cursor = found >= 0 ? 'pointer' : 'default';
+      });
+      canvas.addEventListener('mouseleave', function(){ hoveredNode = -1; canvas.style.cursor = 'default'; mouseX=-1000; mouseY=-1000; });
+      canvas.addEventListener('click', function(){
+        if (hoveredNode >= 0 && hoveredNode !== selectedNode){ selectedNode = hoveredNode; updateSide(); }
+      });
+
+      var stars = [], dust = [];
+      function initBg(){
+        stars = []; dust = [];
+        var w = canvas.width, h = canvas.height;
+        for (var i=0; i<220; i++) stars.push({ x:Math.random()*w, y:Math.random()*h, r:Math.random()*.55+.15, a:Math.random()*.18+.04 });
+        for (var i=0; i<28; i++) dust.push({ x:Math.random()*w, y:Math.random()*h, vx:(Math.random()-.5)*.14, vy:(Math.random()-.5)*.11, r:Math.random()*1.2+.4, a:Math.random()*.22+.06 });
+      }
+      function resize(){
+        var w = canvas.clientWidth || canvas.parentElement.clientWidth || 900;
+        var h = canvas.clientHeight || 620;
+        canvas.width = w; canvas.height = h;
+        initBg();
+      }
+      window.addEventListener('resize', resize);
+      resize();
+      requestAnimationFrame(resize);
+      setTimeout(resize, 100);
+
+      // Labels (station labels — placed to the right of the helix)
+      var labelEls = NODES.map(function(n){
+        var d = document.createElement('div');
+        d.style.cssText = 'position:absolute;transform:translate(0,-50%);white-space:nowrap;pointer-events:none;transition:opacity .25s;';
+        d.innerHTML =
+          '<div style="display:flex;align-items:center;gap:12px;">'+
+            '<span style="font-size:24px;line-height:1;color:'+n.col+';text-shadow:0 0 12px '+n.col+'80;">'+n.glyph+'</span>'+
+            '<div>'+
+              '<p style="font-family:ui-monospace,\'SF Mono\',monospace;font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:'+n.col+';font-weight:700;margin:0;line-height:1.2;">'+n.timing+'</p>'+
+              '<p style="font-size:.98rem;font-weight:640;color:#c8dbd8;margin:2px 0 0;font-family:ui-sans-serif,system-ui,sans-serif;letter-spacing:-.005em;line-height:1.15;">'+n.name+'</p>'+
+            '</div>'+
+          '</div>';
+        labelsEl.appendChild(d);
+        return d;
+      });
+
+      // ── Helix parameters ───────────────────────────────────────────────
+      // A vertical helix seen from the side. Each particle rises from
+      // bottom to top along the coil, crossing each station once per turn.
+      var TURNS = 3.5;
+      var THETA_MAX = TURNS * Math.PI * 2;
+
+      // Particles distributed evenly along the helix
+      var PARTICLE_COUNT = 60;
+      var particles = [];
+      for (var i=0; i<PARTICLE_COUNT; i++){
+        particles.push({
+          t: i / PARTICLE_COUNT,
+          speed: 0.028 + Math.random() * 0.018,
+          trail: [],
+          blocked: false, blockT: 0,
+        });
+      }
+      var TRAIL = 7;
+      var nodeFlash = NODES.map(function(){ return 0; });
+      var shocks = [];
+
+      var elapsed = 0, t0 = performance.now(), active = true;
+      var iterCount = 1;  // increments each time a particle completes the full helix
+      try { new IntersectionObserver(function(es){ active = es[0].isIntersecting; }, {threshold:.01, rootMargin:'200px'}).observe(canvas); } catch(e){}
+
+      function frame(){
+        requestAnimationFrame(frame);
+        if (!active) return;
+        if (canvas.width===0 || canvas.height===0){ resize(); return; }
+
+        var now = performance.now();
+        var dt = Math.min((now-t0)/1000, .05);
+        t0 = now; elapsed += dt;
+
+        var w = canvas.width, h = canvas.height;
+
+        // Helix layout: on the left side, vertical from bottom to top.
+        // The helix extends BEYOND the station range on top and bottom,
+        // fading to transparent — suggests a section of an infinite cycle.
+        var helixCx = w * 0.17;
+        var helixTop = 40;
+        var helixBottom = h - 40;
+        var helixHeight = helixBottom - helixTop;
+        var helixRadius = Math.min(88, w * 0.10);   // horizontal extent (side view compression)
+        var axisX = helixCx;
+
+        // Stations occupy the middle 78% of the helix (10% margin at top+bottom)
+        // — the fade zones outside are "prior/next iterations continuing".
+        var STATION_MARGIN = 0.11;
+        var STATION_SPREAD = 1 - STATION_MARGIN * 2;
+        for (var i=0; i<NODES.length; i++){
+          var stationT = STATION_MARGIN + (i / (NODES.length - 1)) * STATION_SPREAD;
+          NODES[i].py = helixBottom - stationT * helixHeight;
+          NODES[i].px = axisX;
+          NODES[i].labelX = axisX + helixRadius + 44;
+          NODES[i].stationT = stationT;
+        }
+
+        // Motion blur fade
+        ctx.fillStyle = 'rgba(3,13,12,.24)';
+        ctx.fillRect(0, 0, w, h);
+
+        // Stars
+        for (var i=0; i<stars.length; i++){
+          var s = stars[i];
+          ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI*2);
+          ctx.fillStyle = 'rgba(43,189,174,'+s.a+')'; ctx.fill();
+        }
+
+        // Dust
+        for (var i=0; i<dust.length; i++){
+          var d = dust[i];
+          d.x += d.vx; d.y += d.vy;
+          if (d.x < 0) d.x = w; if (d.x > w) d.x = 0;
+          if (d.y < 0) d.y = h; if (d.y > h) d.y = 0;
+          ctx.beginPath(); ctx.arc(d.x, d.y, d.r, 0, Math.PI*2);
+          ctx.fillStyle = 'rgba(160,220,210,'+d.a+')'; ctx.fill();
+        }
+
+        // Central axis (subtle vertical line — the "core" the helix wraps around)
+        var axisGrad = ctx.createLinearGradient(axisX, helixTop, axisX, helixBottom);
+        axisGrad.addColorStop(0, 'rgba(26,56,50,0)');
+        axisGrad.addColorStop(.15, 'rgba(43,189,174,.28)');
+        axisGrad.addColorStop(.85, 'rgba(43,189,174,.28)');
+        axisGrad.addColorStop(1, 'rgba(26,56,50,0)');
+        ctx.strokeStyle = axisGrad; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(axisX, helixTop); ctx.lineTo(axisX, helixBottom); ctx.stroke();
+
+        // Helix guide — draw front and back arcs separately for depth
+        // t goes from 0 (bottom) to 1 (top); theta = t * THETA_MAX
+        // Draw with per-segment opacity that fades to 0 outside the station range,
+        // suggesting the helix continues into prior/next iterations.
+        var HELIX_SAMPLES = 320;
+        ctx.lineWidth = 1.1;
+        for (var i=0; i<HELIX_SAMPLES; i++){
+          var t1 = i / HELIX_SAMPLES;
+          var t2 = (i + 1) / HELIX_SAMPLES;
+          var theta1 = t1 * THETA_MAX;
+          var theta2 = t2 * THETA_MAX;
+          var x1 = axisX + helixRadius * Math.sin(theta1);
+          var y1 = helixBottom - t1 * helixHeight;
+          var x2 = axisX + helixRadius * Math.sin(theta2);
+          var y2 = helixBottom - t2 * helixHeight;
+          var z = Math.cos((theta1 + theta2) * 0.5);   // -1 back, +1 front
+          // Edge fade: opacity drops in the STATION_MARGIN zones at top and bottom
+          var midT = (t1 + t2) * 0.5;
+          var edge = 1;
+          if (midT < STATION_MARGIN)          edge = midT / STATION_MARGIN;
+          else if (midT > 1 - STATION_MARGIN) edge = (1 - midT) / STATION_MARGIN;
+          edge = Math.max(0, Math.min(1, edge));
+          if (edge < 0.02) continue;
+          if (z >= 0) {
+            ctx.strokeStyle = 'rgba(43,189,174,' + (0.35 * edge) + ')';
+            ctx.setLineDash([]);
+          } else {
+            ctx.strokeStyle = 'rgba(26,56,50,' + (0.65 * edge) + ')';
+            ctx.setLineDash([2, 4]);
+          }
+          ctx.beginPath();
+          ctx.moveTo(x1, y1);
+          ctx.lineTo(x2, y2);
+          ctx.stroke();
+        }
+        ctx.setLineDash([]);
+
+        // "Continues" markers — ellipsis in the fade zones, above/below stations
+        ctx.font = '14px ui-monospace, "SF Mono", monospace';
+        ctx.fillStyle = 'rgba(43,189,174,.25)';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        // Bottom (prior iterations)
+        ctx.fillText('···', axisX, helixBottom - STATION_MARGIN * helixHeight * 0.35);
+        // Top (next iterations)
+        ctx.fillText('···', axisX, helixTop + STATION_MARGIN * helixHeight * 0.35);
+        // Iteration counter — off to the left of the axis, faded
+        ctx.font = '600 11px ui-monospace, "SF Mono", monospace';
+        ctx.fillStyle = 'rgba(43,189,174,.4)';
+        ctx.textAlign = 'right';
+        ctx.fillText('iter ' + iterCount, axisX - helixRadius - 18, helixTop + 8);
+        ctx.fillStyle = 'rgba(43,189,174,.22)';
+        ctx.fillText('iter ' + (iterCount - 1), axisX - helixRadius - 18, helixBottom - 8);
+
+        // Update + draw particles
+        for (var i=0; i<particles.length; i++){
+          var p = particles[i];
+          if (p.blocked){
+            p.blockT -= dt;
+            if (p.blockT <= 0){ p.blocked = false; p.t = 0; p.trail = []; }
+            var theta_b = p.t * THETA_MAX;
+            var x_b = axisX + helixRadius * Math.sin(theta_b);
+            var y_b = helixBottom - p.t * helixHeight;
+            ctx.beginPath(); ctx.arc(x_b, y_b, 8, 0, Math.PI*2);
+            ctx.fillStyle = rgba(RED_RGB, .13); ctx.fill();
+            ctx.beginPath(); ctx.arc(x_b, y_b, 2.8, 0, Math.PI*2);
+            ctx.fillStyle = rgba(RED_RGB, 1);
+            ctx.shadowColor = '#e07660'; ctx.shadowBlur = 12;
+            ctx.fill(); ctx.shadowBlur = 0;
+            continue;
+          }
+          var prevT = p.t;
+          p.t += p.speed * dt;
+
+          // Trigger node flash when particle crosses each station's y
+          for (var ni = 0; ni < NODES.length; ni++){
+            var stationT = NODES[ni].stationT;   // set in the layout pass
+            if (prevT < stationT && p.t >= stationT){
+              nodeFlash[ni] = 1;
+              if (NODES[ni].hard && Math.random() < .15){
+                p.blocked = true;
+                p.blockT = .35 + Math.random() * .35;
+                p.t = stationT;
+                shocks.push({ x: axisX + helixRadius * Math.sin(stationT * THETA_MAX), y: helixBottom - stationT * helixHeight, r: 5, life: 1 });
+              }
+            }
+          }
+
+          if (p.t >= 1){ p.t -= 1; p.trail = []; iterCount++; }
+
+          var theta_p = p.t * THETA_MAX;
+          var x_p = axisX + helixRadius * Math.sin(theta_p);
+          var y_p = helixBottom - p.t * helixHeight;
+          var z_p = Math.cos(theta_p);              // depth: -1 back, +1 front
+          var depthFade = 0.35 + 0.65 * ((z_p + 1) / 2);   // 0.35..1
+          var depthScale = 0.65 + 0.35 * ((z_p + 1) / 2);  // 0.65..1
+
+          // Trail
+          p.trail.unshift({ x:x_p, y:y_p, d:depthFade });
+          if (p.trail.length > TRAIL) p.trail.pop();
+
+          var fade = Math.min(p.t*8, 1) * Math.min((1-p.t)*8, 1);
+
+          for (var ti = p.trail.length-1; ti >= 0; ti--){
+            var pt = p.trail[ti];
+            var trailFade = (1 - ti/TRAIL) * fade * pt.d;
+            var trailR = 2 * (1 - ti/TRAIL) * depthScale;
+            ctx.beginPath(); ctx.arc(pt.x, pt.y, trailR, 0, Math.PI*2);
+            ctx.fillStyle = rgba(TEAL_RGB, trailFade * .55); ctx.fill();
+          }
+
+          ctx.beginPath(); ctx.arc(x_p, y_p, 7 * depthScale, 0, Math.PI*2);
+          ctx.fillStyle = rgba(TEAL_RGB, fade * depthFade * .14); ctx.fill();
+          ctx.beginPath(); ctx.arc(x_p, y_p, 2.4 * depthScale, 0, Math.PI*2);
+          ctx.fillStyle = rgba(TEAL_RGB, fade * depthFade * .95);
+          if (z_p > 0) { ctx.shadowColor = '#2bbdae'; ctx.shadowBlur = 10 * depthScale; }
+          ctx.fill(); ctx.shadowBlur = 0;
+        }
+
+        // Shockwaves
+        for (var i = shocks.length-1; i >= 0; i--){
+          var s = shocks[i];
+          s.r += 55 * dt; s.life -= dt * 2;
+          if (s.life <= 0){ shocks.splice(i, 1); continue; }
+          ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI*2);
+          ctx.strokeStyle = rgba(RED_RGB, s.life * .65);
+          ctx.lineWidth = 1.5 * s.life;
+          ctx.stroke();
+        }
+
+        // Draw stations (nodes) — connector line to label + node marker
+        for (var i=0; i<NODES.length; i++){
+          var n = NODES[i];
+          var isActive = (i === selectedNode);
+          var isHover  = (i === hoveredNode);
+          var flash = nodeFlash[i];
+          nodeFlash[i] = Math.max(0, flash - dt * 2.2);
+
+          var breath = 1 + Math.sin(elapsed * (n.hard ? 1.8 : 1.1) + i * .5) * .05;
+          var baseR = n.hard ? 13 : 9;
+          if (isActive || isHover) baseR += n.hard ? 4 : 3;
+          if (flash > 0) baseR += flash * 3;
+          var nr = baseR * breath;
+
+          // Pulse rings
+          var nRings = isActive ? (n.hard ? 4 : 3) : (n.hard ? 3 : 2);
+          for (var r=0; r<nRings; r++){
+            var pt = ((elapsed * (n.hard ? .65 : .38) + r*.36 + i*.24) % 1 + 1) % 1;
+            var ringR = nr + pt * nr * 2.2;
+            var ringA = (1-pt) * .42;
+            ctx.beginPath(); ctx.arc(n.px, n.py, ringR, 0, Math.PI*2);
+            ctx.strokeStyle = rgba(n.rgb, ringA);
+            ctx.lineWidth = 1.4;
+            ctx.shadowColor = n.col; ctx.shadowBlur = 6;
+            ctx.stroke(); ctx.shadowBlur = 0;
+          }
+
+          // Outer glow
+          var glowR = (isActive || isHover) ? (n.hard ? 55 : 38) : (n.hard ? 40 : 26);
+          var glowA = (isActive || isHover) ? (n.hard ? .38 : .28) : (n.hard ? .28 : .16);
+          if (flash > 0) glowA += flash * .25;
+          var glowG = ctx.createRadialGradient(n.px, n.py, 0, n.px, n.py, glowR);
+          glowG.addColorStop(0, rgba(n.rgb, glowA));
+          glowG.addColorStop(1, rgba(n.rgb, 0));
+          ctx.beginPath(); ctx.arc(n.px, n.py, glowR, 0, Math.PI*2);
+          ctx.fillStyle = glowG; ctx.fill();
+
+          // White nucleus
+          var coreScale = .5 + Math.sin(elapsed * 2.4 + i) * .1;
+          ctx.beginPath(); ctx.arc(n.px, n.py, nr * coreScale, 0, Math.PI*2);
+          ctx.fillStyle = 'rgba(255,255,255,.85)'; ctx.fill();
+
+          // Node body
+          ctx.globalCompositeOperation = 'lighter';
+          ctx.beginPath(); ctx.arc(n.px, n.py, nr, 0, Math.PI*2);
+          ctx.fillStyle = n.col;
+          ctx.shadowColor = n.col; ctx.shadowBlur = 20;
+          ctx.fill(); ctx.shadowBlur = 0;
+          ctx.globalCompositeOperation = 'source-over';
+
+          // Dashed ring for hard nodes
+          if (n.hard){
+            ctx.beginPath(); ctx.arc(n.px, n.py, nr + 4, 0, Math.PI*2);
+            ctx.strokeStyle = rgba(RED_RGB, .55);
+            ctx.lineWidth = 1;
+            ctx.setLineDash([3, 4]); ctx.stroke(); ctx.setLineDash([]);
+          }
+
+          // Active highlight ring
+          if (isActive){
+            ctx.beginPath(); ctx.arc(n.px, n.py, nr + 8, 0, Math.PI*2);
+            ctx.strokeStyle = rgba(n.rgb, .8);
+            ctx.lineWidth = 1.5; ctx.stroke();
+          }
+
+          // Connector line from node to label
+          ctx.beginPath();
+          ctx.moveTo(n.px + nr + 3, n.py);
+          ctx.lineTo(n.labelX - 8, n.py);
+          ctx.strokeStyle = rgba(n.rgb, isActive ? .5 : .22);
+          ctx.lineWidth = 1;
+          ctx.stroke();
+
+          // Position HTML label
+          labelEls[i].style.left = n.labelX + 'px';
+          labelEls[i].style.top  = n.py + 'px';
+          labelEls[i].style.opacity = (isActive || isHover) ? '1' : '.6';
+        }
+      }
+      frame();
+    })();
+    </script>
+  </div>
+</section>
+
+<!-- ── Five components — compact list ────────────────────────────────────── -->
+<section id="components" style="background:var(--paper);padding:clamp(48px,7vw,80px) 0;">
+  <div class="wrap">
+    <div class="sec-head" style="margin-bottom:28px;">
+      <p class="eyebrow" style="color:var(--faint);">The five components</p>
+      <h2 style="font-size:clamp(1.6rem,3.2vw,2.2rem);">One per stage of the agent's turn.</h2>
+    </div>
+    <div style="display:grid;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden;">
+
+      <div style="display:grid;grid-template-columns:44px 1fr auto;gap:16px;padding:18px 20px;background:var(--paper);align-items:center;">
+        <span style="font-size:22px;color:#6b5bd0;text-shadow:0 0 12px #6b5bd050;font-weight:400;">◐</span>
+        <div>
+          <p style="font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#6b5bd0;font-weight:700;margin:0 0 3px;">Before work · instruction</p>
+          <p style="font-weight:640;font-size:.95rem;color:var(--ink);margin:0 0 3px;">Context reading</p>
+          <p style="font-size:13.5px;color:var(--muted);line-height:1.5;margin:0;">The agent scans AGENTS.md, docs/adr/, and in-flight exec-plans before touching any file.</p>
+        </div>
+        <a href="../agentic-harness/determinism.html" style="font-family:var(--mono);font-size:11px;color:var(--muted);text-decoration:none;padding:5px 12px;border:1px solid var(--line);border-radius:99px;white-space:nowrap;transition:color .15s,border-color .15s;" onmouseover="this.style.color='#6b5bd0';this.style.borderColor='#6b5bd0'" onmouseout="this.style.color='var(--muted)';this.style.borderColor='var(--line)'">docs →</a>
+      </div>
+
+      <div style="display:grid;grid-template-columns:44px 1fr auto;gap:16px;padding:18px 20px;background:var(--paper);align-items:center;">
+        <span style="font-size:22px;color:#b64b39;text-shadow:0 0 12px #b64b3950;font-weight:400;">⬢</span>
+        <div>
+          <p style="font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#b64b39;font-weight:700;margin:0 0 3px;">Before coding · exit 2 · hard</p>
+          <p style="font-weight:640;font-size:.95rem;color:var(--ink);margin:0 0 3px;">Planning Gate</p>
+          <p style="font-size:13.5px;color:var(--muted);line-height:1.5;margin:0;">PreToolUse hook intercepts every Write to app code. No exec plan, no write — tool call is cancelled.</p>
+        </div>
+        <a href="../agentic-harness/planning-gate.html" style="font-family:var(--mono);font-size:11px;color:var(--muted);text-decoration:none;padding:5px 12px;border:1px solid var(--line);border-radius:99px;white-space:nowrap;transition:color .15s,border-color .15s;" onmouseover="this.style.color='#b64b39';this.style.borderColor='#b64b39'" onmouseout="this.style.color='var(--muted)';this.style.borderColor='var(--line)'">docs →</a>
+      </div>
+
+      <div style="display:grid;grid-template-columns:44px 1fr auto;gap:16px;padding:18px 20px;background:var(--paper);align-items:center;">
+        <span style="font-size:22px;color:#c47a1e;text-shadow:0 0 12px #c47a1e50;font-weight:400;">⌬</span>
+        <div>
+          <p style="font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#c47a1e;font-weight:700;margin:0 0 3px;">Every turn · exit 2 · hard</p>
+          <p style="font-weight:640;font-size:.95rem;color:var(--ink);margin:0 0 3px;">Habit Hooks</p>
+          <p style="font-size:13.5px;color:var(--muted);line-height:1.5;margin:0;">Stop hook runs the linter, maps violations to coaching guides, re-injects the report until the design is fixed.</p>
+        </div>
+        <a href="../agentic-harness/habit-hooks.html" style="font-family:var(--mono);font-size:11px;color:var(--muted);text-decoration:none;padding:5px 12px;border:1px solid var(--line);border-radius:99px;white-space:nowrap;transition:color .15s,border-color .15s;" onmouseover="this.style.color='#c47a1e';this.style.borderColor='#c47a1e'" onmouseout="this.style.color='var(--muted)';this.style.borderColor='var(--line)'">docs →</a>
+      </div>
+
+      <div style="display:grid;grid-template-columns:44px 1fr auto;gap:16px;padding:18px 20px;background:var(--paper);align-items:center;">
+        <span style="font-size:22px;color:#4f8a4a;text-shadow:0 0 12px #4f8a4a50;font-weight:400;">△</span>
+        <div>
+          <p style="font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#4f8a4a;font-weight:700;margin:0 0 3px;">After implementing · CI + on-demand</p>
+          <p style="font-weight:640;font-size:.95rem;color:var(--ink);margin:0 0 3px;">Testing Pyramid</p>
+          <p style="font-size:13.5px;color:var(--muted);line-height:1.5;margin:0;">Seven layers from types to mutation. Three CI-gated, one on-demand (TestSprite), three deferred with unlock criteria.</p>
+        </div>
+        <a href="../agentic-harness/testing-pyramid.html" style="font-family:var(--mono);font-size:11px;color:var(--muted);text-decoration:none;padding:5px 12px;border:1px solid var(--line);border-radius:99px;white-space:nowrap;transition:color .15s,border-color .15s;" onmouseover="this.style.color='#4f8a4a';this.style.borderColor='#4f8a4a'" onmouseout="this.style.color='var(--muted)';this.style.borderColor='var(--line)'">docs →</a>
+      </div>
+
+      <div style="display:grid;grid-template-columns:44px 1fr auto;gap:16px;padding:18px 20px;background:var(--paper);align-items:center;">
+        <span style="font-size:22px;color:#6b5bd0;text-shadow:0 0 12px #6b5bd050;font-weight:400;">◆</span>
+        <div>
+          <p style="font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#6b5bd0;font-weight:700;margin:0 0 3px;">When deciding · instruction</p>
+          <p style="font-weight:640;font-size:.95rem;color:var(--ink);margin:0 0 3px;">ADR Discipline</p>
+          <p style="font-size:13.5px;color:var(--muted);line-height:1.5;margin:0;">Permanent records for tool adoption, cross-cutting patterns, accepted trade-offs. Never deleted, only superseded.</p>
+        </div>
+        <a href="../agentic-harness/adr-discipline.html" style="font-family:var(--mono);font-size:11px;color:var(--muted);text-decoration:none;padding:5px 12px;border:1px solid var(--line);border-radius:99px;white-space:nowrap;transition:color .15s,border-color .15s;" onmouseover="this.style.color='#6b5bd0';this.style.borderColor='#6b5bd0'" onmouseout="this.style.color='var(--muted)';this.style.borderColor='var(--line)'">docs →</a>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ── How it works ──────────────────────────────────────────────────────── -->
+<section id="how" style="padding:clamp(48px,7vw,80px) 0;">
+  <div class="wrap">
+    <div class="sec-head" style="margin-bottom:24px;">
+      <p class="eyebrow" style="color:var(--faint);">How it works</p>
+      <h2 style="font-size:clamp(1.6rem,3.2vw,2.2rem);">Two hooks. One config file.</h2>
+      <p>Both hard gates are Claude Code hooks that exit with code 2. That's the only exit code that hard-blocks — anything else is advisory.</p>
+    </div>
+    <div class="code">
+      <div class="bar"><i></i><i></i><i></i><span class="fn">.claude/settings.json</span></div>
+<pre>{
+  <span class="at">"enabledMcpjsonServers"</span>: [<span class="st">"context7"</span>],
+  <span class="at">"hooks"</span>: {
+    <span class="at">"PreToolUse"</span>: [{
+      <span class="at">"matcher"</span>: <span class="st">"Write"</span>,
+      <span class="at">"hooks"</span>: [{
+        <span class="at">"type"</span>: <span class="st">"command"</span>,
+        <span class="at">"command"</span>: <span class="st">"bash "${CLAUDE_PROJECT_DIR}/.claude/hooks/require-plan.sh""</span>,
+        <span class="at">"timeout"</span>: <span class="num">10</span>
+      }]
+    }],
+    <span class="at">"Stop"</span>: [{
+      <span class="at">"matcher"</span>: <span class="st">""</span>,
+      <span class="at">"hooks"</span>: [{
+        <span class="at">"type"</span>: <span class="st">"command"</span>,
+        <span class="at">"command"</span>: <span class="st">"habit-hooks run"</span>,
+        <span class="at">"timeout"</span>: <span class="num">30</span>
+      }]
+    }]
+  }
+}</pre>
+    </div>
+  </div>
+</section>
+
+<!-- ── Install ───────────────────────────────────────────────────────────── -->
+<section id="install" style="background:#07100f;padding:clamp(48px,7vw,80px) 0;color:#c3d3d1;">
+  <div class="wrap">
+    <div class="sec-head" style="margin-bottom:24px;">
+      <p class="eyebrow" style="color:#2bbdae;">Install in another repo</p>
+      <h2 style="font-size:clamp(1.6rem,3.2vw,2.2rem);color:#e7f0ef;">One prompt. Any codebase.</h2>
+      <p style="color:#7a9896;">Paste the bootstrap prompt into a Claude Code session in the target repo. The agent explores the stack, adapts the planning-gate regex, installs habit-hooks, wires the hooks, and configures the linter thresholds.</p>
+    </div>
+    <div style="background:#030d0c;border:1px solid #1a2e2c;border-radius:12px;padding:20px 22px;font-family:var(--mono);font-size:13px;line-height:1.7;">
+      <div style="color:#4a6461;margin-bottom:10px;font-size:11px;letter-spacing:.06em;"># Step 1 — install habit-hooks in the target repo</div>
+      <div><span style="color:#3a5654;">$ </span><span style="color:#4fb8af;">uv add --dev habit-hooks</span></div>
+      <div><span style="color:#3a5654;">$ </span><span style="color:#4fb8af;">habit-hooks init</span></div>
+      <div style="color:#4a6461;margin:14px 0 10px;font-size:11px;letter-spacing:.06em;"># Step 2 — paste the bootstrap prompt in Claude Code</div>
+      <div style="color:#c8dbd8;">→ <a href="../prompts/bootstrap-agentic-harness.md" style="color:#4fb8af;text-decoration:none;border-bottom:1px dashed #4fb8af80;">docs/prompts/bootstrap-agentic-harness.md ↗</a></div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Docs index ────────────────────────────────────────────────────────── -->
+<section id="docs" style="background:var(--paper);padding:clamp(40px,6vw,60px) 0;">
+  <div class="wrap">
+    <div class="sec-head" style="margin-bottom:24px;">
+      <p class="eyebrow" style="color:var(--faint);">Docs</p>
+      <h2 style="font-size:clamp(1.4rem,2.8vw,1.9rem);">Read the reference.</h2>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;">
+      <a href="../agentic-harness/README.html" style="display:block;padding:16px 18px;border:1px solid var(--line);border-radius:10px;text-decoration:none;color:var(--ink);transition:border-color .15s;" onmouseover="this.style.borderColor='var(--teal)'" onmouseout="this.style.borderColor='var(--line)'">
+        <p style="font-family:var(--mono);font-size:11px;color:var(--teal);margin:0 0 4px;letter-spacing:.06em;">agentic-harness/README.md</p>
+        <p style="font-size:13.5px;color:var(--muted);margin:0;line-height:1.45;">Index and overview of the five components.</p>
+      </a>
+      <a href="../agentic-harness/enforcement.html" style="display:block;padding:16px 18px;border:1px solid var(--line);border-radius:10px;text-decoration:none;color:var(--ink);transition:border-color .15s;" onmouseover="this.style.borderColor='var(--teal)'" onmouseout="this.style.borderColor='var(--line)'">
+        <p style="font-family:var(--mono);font-size:11px;color:var(--teal);margin:0 0 4px;letter-spacing:.06em;">enforcement.md</p>
+        <p style="font-size:13.5px;color:var(--muted);margin:0;line-height:1.45;">Hook exit codes and the hard vs soft enforcement matrix.</p>
+      </a>
+      <a href="../agentic-harness/anatomy.html" style="display:block;padding:16px 18px;border:1px solid var(--line);border-radius:10px;text-decoration:none;color:var(--ink);transition:border-color .15s;" onmouseover="this.style.borderColor='var(--teal)'" onmouseout="this.style.borderColor='var(--line)'">
+        <p style="font-family:var(--mono);font-size:11px;color:var(--teal);margin:0 0 4px;letter-spacing:.06em;">anatomy.md</p>
+        <p style="font-size:13.5px;color:var(--muted);margin:0;line-height:1.45;">Every file the harness touches, grouped by component.</p>
+      </a>
+      <a href="../agentic-harness/commands.html" style="display:block;padding:16px 18px;border:1px solid var(--line);border-radius:10px;text-decoration:none;color:var(--ink);transition:border-color .15s;" onmouseover="this.style.borderColor='var(--teal)'" onmouseout="this.style.borderColor='var(--line)'">
+        <p style="font-family:var(--mono);font-size:11px;color:var(--teal);margin:0 0 4px;letter-spacing:.06em;">commands.md</p>
+        <p style="font-size:13.5px;color:var(--muted);margin:0;line-height:1.45;">Make targets and manual operations.</p>
+      </a>
+      <a href="../agentic-harness/ci-integration.html" style="display:block;padding:16px 18px;border:1px solid var(--line);border-radius:10px;text-decoration:none;color:var(--ink);transition:border-color .15s;" onmouseover="this.style.borderColor='var(--teal)'" onmouseout="this.style.borderColor='var(--line)'">
+        <p style="font-family:var(--mono);font-size:11px;color:var(--teal);margin:0 0 4px;letter-spacing:.06em;">ci-integration.md</p>
+        <p style="font-size:13.5px;color:var(--muted);margin:0;line-height:1.45;">How the harness maps to pre-commit and GitHub Actions.</p>
+      </a>
+      <a href="../adr/README.md" style="display:block;padding:16px 18px;border:1px solid var(--line);border-radius:10px;text-decoration:none;color:var(--ink);transition:border-color .15s;" onmouseover="this.style.borderColor='var(--teal)'" onmouseout="this.style.borderColor='var(--line)'">
+        <p style="font-family:var(--mono);font-size:11px;color:var(--teal);margin:0 0 4px;letter-spacing:.06em;">docs/adr/</p>
+        <p style="font-size:13.5px;color:var(--muted);margin:0;line-height:1.45;">The five ADRs that motivate the harness design.</p>
+      </a>
+    </div>
+  </div>
+</section>
+
+
+</main>
+
+<!-- ── Footer ─────────────────────────────────────────────────────────────── -->
+<footer>
+  <div class="wrap">
+    <p class="footer-note">Agentic Quality Harness · email-triage project · 2026</p>
+    <p class="footer-note"><a href="https://github.com/habit-hooks/habit-hooks" style="color:var(--faint);">habit-hooks MIT</a> · <a href="https://docs.astral.sh/ruff/" style="color:var(--faint);">ruff</a> · <a href="https://code.claude.com/docs/en/hooks-guide.md" style="color:var(--faint);">Claude Code hooks</a></p>
+  </div>
+</footer>
+</div>
+
+<script>
+function toggleTheme() {
+  const r = document.documentElement;
+  const t = r.getAttribute('data-theme');
+  r.setAttribute('data-theme', t === 'dark' ? 'light' : 'dark');
+}
+// Animate confidence bars on load
+window.addEventListener('load', () => {
+  document.querySelectorAll('.conf-fill').forEach(el => {
+    setTimeout(() => { el.style.width = el.dataset.w || '91%'; }, 200);
+  });
+});
+</script>
+</body>
+</html>

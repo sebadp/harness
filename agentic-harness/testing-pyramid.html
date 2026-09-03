@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Testing Pyramid · Agentic Quality Harness</title>
+<style>
+:root {
+  --paper:#fff; --ground:#f4f8f7; --ink:#0c1719; --ink-soft:#23383a;
+  --muted:#586e6f; --faint:#849898; --line:#dbe7e5; --line-strong:#c4d6d3;
+  --teal:#0c7d76; --teal-bright:#12a89c; --teal-wash:#e4f2ef;
+  --amber:#c47a1e; --violet:#6b5bd0; --crit:#b64b39; --green:#4f8a4a;
+  --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,"SF Mono","JetBrains Mono",Menlo,Consolas,monospace;
+  --radius:12px;
+}
+@media (prefers-color-scheme: dark) { :root {
+  --paper:#0e1719; --ground:#0a1113; --ink:#e7f0ef; --ink-soft:#c3d3d1;
+  --muted:#8ca3a2; --faint:#5f7574; --line:#1c2a2b; --line-strong:#26383a;
+  --teal:#2bbdae; --teal-bright:#46d8c7; --teal-wash:#10312e;
+  --amber:#e2a552; --violet:#9a8cf0; --crit:#e07660; --green:#79bd72;
+}}
+* { box-sizing:border-box; }
+body { margin:0; background:var(--ground); color:var(--ink); font-family:var(--sans); font-size:16px; line-height:1.7; -webkit-font-smoothing:antialiased; }
+body ::selection { background:var(--teal); color:var(--paper); }
+a { color:var(--teal); text-decoration:none; border-bottom:1px dashed color-mix(in srgb,var(--teal) 40%,transparent); transition:color .12s,border-color .12s; }
+a:hover { color:var(--teal-bright); border-bottom-style:solid; }
+code { font-family:var(--mono); font-size:.88em; background:color-mix(in srgb,var(--teal) 10%,transparent); color:var(--ink); padding:1.5px 6px; border-radius:4px; border:1px solid color-mix(in srgb,var(--teal) 15%,transparent); }
+pre { font-family:var(--mono); font-size:13px; line-height:1.6; background:#05100f; color:#c8dbd8; padding:18px 20px; border-radius:10px; overflow-x:auto; margin:16px 0; border:1px solid #1a2e2c; box-shadow:0 6px 24px -10px rgba(12,23,25,.35); }
+pre code { background:none; border:none; padding:0; color:inherit; font-size:inherit; }
+
+/* topbar */
+.topbar { position:sticky; top:0; z-index:50; backdrop-filter:saturate(1.4) blur(10px); background:color-mix(in srgb,var(--ground) 85%,transparent); border-bottom:1px solid var(--line); }
+.topbar-wrap { max-width:1140px; margin:0 auto; padding:0 24px; display:flex; align-items:center; justify-content:space-between; height:58px; gap:16px; }
+.brand { display:flex; align-items:center; gap:10px; font-weight:640; letter-spacing:-.02em; color:var(--ink); border:none; }
+.brand .glyph { width:24px; height:24px; border-radius:6px; display:grid; place-items:center; background:var(--ink); color:var(--paper); font-family:var(--mono); font-size:14px; font-weight:700; }
+.brand:hover { color:var(--teal); }
+.back-link { font-family:var(--mono); font-size:12px; letter-spacing:.06em; color:var(--muted); border:1px solid var(--line-strong); border-radius:8px; padding:5px 12px; }
+.back-link:hover { border-color:var(--teal); color:var(--teal); border-bottom-style:solid; }
+
+/* layout */
+.layout { max-width:1140px; margin:0 auto; padding:32px 24px 96px; display:grid; grid-template-columns:220px 1fr; gap:52px; }
+@media (max-width:860px) { .layout { grid-template-columns:1fr; gap:20px; padding-top:24px; } }
+
+/* sidebar */
+.sidebar { position:sticky; top:80px; align-self:start; }
+@media (max-width:860px) { .sidebar { position:static; padding:16px 18px; background:var(--paper); border:1px solid var(--line); border-radius:var(--radius); } }
+.sidebar-label { font-family:var(--mono); font-size:10.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--faint); font-weight:700; margin:0 0 12px 12px; }
+.nav-list { list-style:none; margin:0; padding:0; }
+.nav-list a { display:block; padding:7px 12px; font-size:14px; color:var(--muted); border:none; border-left:2px solid transparent; border-radius:0 6px 6px 0; }
+.nav-list a:hover { color:var(--ink); background:color-mix(in srgb,var(--teal) 6%,transparent); border-left-color:color-mix(in srgb,var(--teal) 40%,transparent); }
+.nav-list a.active { color:var(--teal); background:color-mix(in srgb,var(--teal) 10%,transparent); border-left-color:var(--teal); font-weight:600; }
+
+/* content */
+.content { max-width:720px; }
+.content h1 { font-size:clamp(1.8rem,3.4vw,2.4rem); font-weight:680; letter-spacing:-.025em; line-height:1.15; margin:0 0 20px; }
+.content h2 { font-size:1.4rem; font-weight:680; letter-spacing:-.015em; margin:44px 0 14px; padding-top:12px; border-top:1px solid var(--line); }
+.content h3 { font-size:1.08rem; font-weight:660; margin:28px 0 10px; }
+.content h4 { font-size:.95rem; font-weight:640; margin:20px 0 8px; color:var(--ink-soft); }
+.content p { margin:0 0 14px; color:var(--ink-soft); }
+.content > p:first-of-type { font-size:1.05rem; color:var(--muted); }
+.content ul, .content ol { margin:0 0 16px; padding-left:22px; color:var(--ink-soft); }
+.content li { margin:5px 0; }
+.content blockquote { margin:16px 0; padding:12px 18px; border-left:3px solid var(--teal); background:color-mix(in srgb,var(--teal) 5%,transparent); border-radius:0 8px 8px 0; color:var(--ink-soft); font-style:italic; }
+.content blockquote p { margin:0; }
+.content hr { border:none; border-top:1px solid var(--line); margin:32px 0; }
+.content table { border-collapse:collapse; margin:16px 0; width:100%; font-size:14px; }
+.content th, .content td { padding:9px 14px; text-align:left; border-bottom:1px solid var(--line); }
+.content thead th { font-family:var(--mono); font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--faint); font-weight:700; border-bottom:1px solid var(--line-strong); }
+.content tbody tr:hover { background:color-mix(in srgb,var(--teal) 4%,transparent); }
+.content strong { color:var(--ink); font-weight:640; }
+
+/* footer */
+.doc-footer { margin-top:64px; padding-top:24px; border-top:1px solid var(--line); font-size:13px; color:var(--faint); display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap; }
+.doc-footer a { color:var(--muted); border:none; }
+.doc-footer a:hover { color:var(--teal); }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-wrap">
+    <a class="brand" href="../landing/agentic-harness.html">
+      <span class="glyph">⌬</span>
+      Agentic Quality Harness
+    </a>
+    <a class="back-link" href="../landing/agentic-harness.html">← landing</a>
+  </div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar">
+    <p class="sidebar-label">The harness</p>
+    <ul class="nav-list">
+      <li><a href="README.html">Overview</a></li>
+      <li><a href="planning-gate.html">Planning Gate</a></li>
+      <li><a href="habit-hooks.html">Habit Hooks</a></li>
+      <li><a href="adr-discipline.html">ADR Discipline</a></li>
+      <li><a href="testing-pyramid.html" class="active">Testing Pyramid</a></li>
+      <li><a href="determinism.html">Context Reading</a></li>
+      <li><a href="enforcement.html">Enforcement</a></li>
+      <li><a href="anatomy.html">Anatomy</a></li>
+      <li><a href="commands.html">Commands</a></li>
+      <li><a href="ci-integration.html">CI Integration</a></li>
+    </ul>
+  </aside>
+
+  <main class="content">
+<h1>Testing Pyramid (Layer 4)</h1>
+<p><strong>Layer:</strong> Mixed — CI-gated (L1–L3) · on-demand (L4) · deferred (L5–L7)
+<strong>Related ADRs:</strong> <a href="../adr/002-testing-pyramid.html">ADR-002</a> · <a href="../adr/003-testsprite-e2e-regression.html">ADR-003</a></p>
+<h2>The seven layers</h2>
+<pre><code>Layer 7 ── Mutation testing         [DEFERRED — unlock when coverage ≥ 80%]
+Layer 6 ── Property-based testing   [DEFERRED — unlock after mutation shows gaps]
+Layer 5 ── Contract testing         [DEFERRED — unlock when API has external consumers]
+Layer 4 ── TestSprite E2E/API       [ACTIVE — on-demand]
+Layer 3 ── pytest e2e (TestClient)  [ACTIVE — 106 tests, CI required]
+Layer 2 ── pytest unit              [ACTIVE — 154 tests, CI required]
+Layer 1 ── Types + style            [ACTIVE — pre-commit + agent Stop hook]
+</code></pre>
+<p>Each layer covers a risk the one below cannot. Layers 5–7 are explicitly deferred
+with documented unlock criteria — not &quot;never&quot;, but &quot;when X happens&quot;.</p>
+<h2>Layer 1 — Types + style</h2>
+<ul>
+<li><strong>Tools:</strong> <code>ruff</code> (lint + format), <code>pyright</code> (types, strict mode), habit-hooks (design)</li>
+<li><strong>When:</strong> every commit (pre-commit) and every agent turn (Stop hook)</li>
+<li><strong>Covers:</strong> type errors, imports, formatting, structural design smells (C901, PLR09xx)</li>
+<li><strong>Doesn't cover:</strong> runtime behavior, business logic</li>
+<li><strong>Gate:</strong> blocks commits; blocks agent turns via exit 2</li>
+</ul>
+<h2>Layer 2 — pytest unit (154 tests, ~7s)</h2>
+<ul>
+<li><strong>Covers:</strong> pure logic — schemas, validators, prompt compiler, eval metrics, OTel baggage</li>
+<li><strong>Rule:</strong> a test is &quot;unit&quot; if it does NOT use fixtures matching <code>*client</code>, <code>*session</code>, <code>*engine</code></li>
+<li><strong>Doesn't cover:</strong> integration with FastAPI, DB, network</li>
+<li><strong>Gate:</strong> CI <code>unit</code> job, required on every PR</li>
+<li><strong>Auto-marking:</strong> <code>tests/conftest.py</code> inspects fixture names and applies <code>pytest.mark.unit</code> or <code>pytest.mark.e2e</code> automatically</li>
+</ul>
+<h2>Layer 3 — pytest e2e (106 tests, ~19s)</h2>
+<ul>
+<li><strong>Covers:</strong> full FastAPI endpoints, auth flows, workspace CRUD, prompt publish/rollback, Gmail sync</li>
+<li><strong>Runs against:</strong> TestClient + SQLite in-memory</li>
+<li><strong>Known limitation:</strong> SQLite differences from Postgres (RETURNING, CTEs, transaction isolation) not caught here</li>
+<li><strong>Gate:</strong> CI <code>e2e</code> job, required on every PR</li>
+</ul>
+<h2>Layer 4 — TestSprite E2E/API regression</h2>
+<p><strong>Product:</strong> <a href="https://testsprite.com">testsprite.com</a> — AI-generated E2E/API tests
+<strong>Details:</strong> <a href="../adr/003-testsprite-e2e-regression.html">ADR-003</a></p>
+<ul>
+<li><strong>Covers:</strong> real HTTP flows against the live server (localhost:8000); regressions from AI agent changes</li>
+<li><strong>Not covered by pytest:</strong> validates against actual response contract (headers, status codes, optional fields)</li>
+<li><strong>When to add tests:</strong> after an exec plan closes with new endpoints or UI flows</li>
+<li><strong>Not CI-gated (yet):</strong> requires running server + credits + Groq key; used on-demand via <code>make check-testsprite</code> (future)</li>
+</ul>
+<h3>First-run results (2026-08-27)</h3>
+<p>10 tests generated, 5/10 passed. The 5 failures were all infrastructure issues, not
+bugs in the app:</p>
+<table>
+<thead>
+<tr>
+<th>Test</th>
+<th>Result</th>
+<th>Reason</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>TC001 GET /health</td>
+<td>✓ PASS</td>
+<td>—</td>
+</tr>
+<tr>
+<td>TC002 POST /auth/signup</td>
+<td>✓ PASS</td>
+<td>—</td>
+</tr>
+<tr>
+<td>TC003 POST /auth/login (valid)</td>
+<td>✓ PASS</td>
+<td>—</td>
+</tr>
+<tr>
+<td>TC004 POST /auth/login (invalid)</td>
+<td>✓ PASS</td>
+<td>—</td>
+</tr>
+<tr>
+<td>TC005 GET /auth/me</td>
+<td>✓ PASS</td>
+<td>—</td>
+</tr>
+<tr>
+<td>TC006 POST /auth/rotate-key</td>
+<td>✗ FAIL</td>
+<td>Rate limit — signup 5/min exhausted</td>
+</tr>
+<tr>
+<td>TC007 POST /triage</td>
+<td>✗ FAIL</td>
+<td>Rate limit — signup 5/min exhausted</td>
+</tr>
+<tr>
+<td>TC008 POST /triage/stream</td>
+<td>✗ FAIL</td>
+<td><code>sseclient</code> module not in sandbox</td>
+</tr>
+<tr>
+<td>TC009 POST /workspaces</td>
+<td>✗ FAIL</td>
+<td>Rate limit</td>
+</tr>
+<tr>
+<td>TC010 GET /workspaces/:id</td>
+<td>✗ FAIL</td>
+<td>Rate limit</td>
+</tr>
+</tbody>
+</table>
+<h3>Known fixes needed</h3>
+<ol>
+<li><strong>Rate limiting:</strong> tests create a fresh user per test — the 5/min signup cap
+exhausts fast. Fix: seed a test account in <code>.env.test</code> and reuse it across
+related test cases.</li>
+<li><strong>SSE:</strong> TC008 imports <code>sseclient</code> which isn't in the TestSprite sandbox. Fix:
+use <code>requests.get(stream=True)</code> and parse the <code>data:</code> lines manually.</li>
+</ol>
+<h3>MCP tools</h3>
+<table>
+<thead>
+<tr>
+<th>Tool</th>
+<th>When to call</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>testsprite_check_account_info</code></td>
+<td>Before any large run — verify credits</td>
+</tr>
+<tr>
+<td><code>testsprite_generate_code_summary</code></td>
+<td>First time or after major refactor</td>
+</tr>
+<tr>
+<td><code>testsprite_generate_standardized_prd</code></td>
+<td>After code summary</td>
+</tr>
+<tr>
+<td><code>testsprite_generate_backend_test_plan</code></td>
+<td>After a new exec plan closes</td>
+</tr>
+<tr>
+<td><code>testsprite_generate_frontend_test_plan</code></td>
+<td>After new UI flows</td>
+</tr>
+<tr>
+<td><code>testsprite_generate_code_and_execute</code></td>
+<td>Server running + plan generated</td>
+</tr>
+<tr>
+<td><code>testsprite_open_test_result_dashboard</code></td>
+<td>Review failures, edit steps</td>
+</tr>
+</tbody>
+</table>
+<h2>Layer 5 — Contract testing (DEFERRED)</h2>
+<ul>
+<li><strong>Would cover:</strong> schema compatibility between frontend and backend</li>
+<li><strong>Deferred because:</strong> monorepo with pyright + Zod already catches most drift</li>
+<li><strong>Unlock when:</strong> the API has external consumers or splits into microservices</li>
+<li><strong>Candidate tool:</strong> Pact (consumer-driven) or OpenAPI schema validation</li>
+</ul>
+<h2>Layer 6 — Property-based testing (DEFERRED)</h2>
+<ul>
+<li><strong>Would cover:</strong> invariants — &quot;confidence in [0,1]&quot;, &quot;slug is alphanumeric&quot;,
+&quot;compiled prompt includes all active categories&quot;</li>
+<li><strong>Deferred because:</strong> pyright + Pydantic already enforce most invariants</li>
+<li><strong>Unlock when:</strong> mutation testing reveals gaps that generative testing could catch</li>
+<li><strong>Candidate tool:</strong> <code>hypothesis</code> + <code>pytest-hypothesis</code></li>
+</ul>
+<h2>Layer 7 — Mutation testing (DEFERRED)</h2>
+<ul>
+<li><strong>Would cover:</strong> measure how good the existing tests are (would they catch a
+real bug?)</li>
+<li><strong>Deferred because:</strong> requires running the test suite N times per mutant — expensive</li>
+<li><strong>Unlock when:</strong> coverage gate is active and reaches ~80%</li>
+<li><strong>Candidate tool:</strong> <code>mutmut</code> on <code>email_triage/services/</code> and <code>email_triage/auth/</code> first</li>
+</ul>
+<h2>Coverage gate (PENDING — high priority)</h2>
+<ul>
+<li><strong>Current state:</strong> no <code>--cov-fail-under</code>; unknown percentage of code covered</li>
+<li><strong>Decision pending:</strong> activate <code>pytest-cov</code> with 80% threshold before enabling
+mutation testing (Layer 7)</li>
+<li><strong>Not in this ADR:</strong> requires its own exec plan</li>
+</ul>
+
+    <div class="doc-footer">
+      <a href="../landing/agentic-harness.html">← Back to landing</a>
+      <a href="https://github.com/habit-hooks/habit-hooks">habit-hooks (MIT)</a>
+    </div>
+  </main>
+</div>
+
+</body>
+</html>
